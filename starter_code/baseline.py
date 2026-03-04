@@ -169,30 +169,38 @@ class BaselineGCN(nn.Module):
         super().__init__()
         self.fc1 = nn.Linear(in_dim, hidden)
         self.fc2 = nn.Linear(hidden, hidden)
+        self.fc3 = nn.Linear(hidden, hidden)
         self.bn1 = nn.BatchNorm1d(hidden)
         self.bn2 = nn.BatchNorm1d(hidden)
+        self.bn3 = nn.BatchNorm1d(hidden)
         self.cls = nn.Linear(hidden * 2, num_classes)
         self.dropout = dropout
 
     def forward(self, x, adj):
+        # ----- First GCN Layer -----
         x = torch.spmm(adj, self.fc1(x))
         x = self.bn1(x)
         x = F.relu(x)
         x = F.dropout(x, p=self.dropout, training=self.training)
 
+        # ----- Second  GCN Layer -----
         x = torch.spmm(adj, self.fc2(x))
         x = self.bn2(x)
         x = F.relu(x)
 
-        g_mean = x.mean(dim=0)
-        g_max = x.max(dim=0).values
-        g = torch.cat([g_mean, g_max], dim=0)
+        # ----- Third GCN Layer added by sanae  -----
+        x = torch.spmm(adj, self.fc3(x))
+        x = self.bn3(x)
+        x = F.relu(x)
+
+        g =  x.sum(dim=0)
 
         return self.cls(g)
 
 
 model = BaselineGCN().to(DEVICE)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=1e-4)
+# ----- Sanae changes lr and weight -----
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 
