@@ -283,7 +283,7 @@ with torch.no_grad():
         pred_rows.append({"filename": fn, "prediction": pred})
 
 submission = pd.DataFrame(pred_rows).sort_values("filename")
-out_path = os.path.join(DATA_DIR, "submission.csv")
+out_path = os.path.join(DATA_DIR, "sanae_submission.csv")
 submission.to_csv(out_path, index=False)
 
 print(f"\nWrote: {out_path}")
